@@ -23,7 +23,7 @@ MYSQL_PASSWORD=123         # database user password
 MYSQL_ROOT_PASSWORD=123    # database root user password
 INTERFACE=0.0.0.0          # interface where ports will be proxied
 SITE_PATH=/var/www/bitrix  # path to your site files directory
-SECURITY_KEY=YOUR_SECURITY_KEY  # security key for use the bitrix module push&pull
+SECURITY_KEY=YOUR_SECURITY_KEY  # security key to use the bitrix push&pull module
 HOST=site.domain.local     # Local website domain
 ```
 
