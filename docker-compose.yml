@@ -1,0 +1,161 @@
+version: '2'
+
+services:
+    php:
+        build: ./${PHP_VERSION}
+        container_name: bx-php
+        volumes_from:
+            - source
+        links:
+            - db
+            - memcached
+        networks:
+            - bitrix
+        restart: always
+    web_server:
+        build: ./${WEB_SERVER_TYPE}
+        depends_on:
+            - source
+        volumes_from:
+            - source
+        links:
+            - php
+        networks:
+            - bitrix
+            - default
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.nginx-dev1.rule=Host(`${HOST}`)"
+            - "traefik.http.services.nginx-dev1.loadbalancer.server.port=80"
+            #- "traefik.http.routers.nginx-dev1.tls=true"
+            - "traefik.docker.network=traefik-net"
+        restart: always
+    db:
+        build: ./${DB_SERVER_TYPE}
+        platform: linux/amd64
+        volumes_from:
+            - source
+        ports:
+            - '${INTERFACE}:3306:3306'
+        environment:
+            MYSQL_DATABASE: ${MYSQL_DATABASE}
+            MYSQL_USER: ${MYSQL_USER}
+            MYSQL_PASSWORD: ${MYSQL_PASSWORD}
+            MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+        command: mysqld --sql-mode=""
+        networks:
+            - bitrix
+        restart: always
+    memcached:
+        image: memcached:1.6.12-alpine
+        volumes_from:
+            - source
+        ports:
+            - '${INTERFACE}:11211:11211'
+        networks:
+            - bitrix
+        restart: always
+    adminer:
+        image: dockette/adminer:full
+        links:
+            - db:db
+        ports:
+            - '${INTERFACE}:8080:80'
+        environment:
+            UPLOAD: 1024M # upload_max_filesize, post_max_size
+        networks:
+            - bitrix
+    source:
+        image: alpine:latest
+        volumes:
+            - ./logs/${WEB_SERVER_TYPE}:/var/log/${WEB_SERVER_TYPE}
+            - ./logs/php:/var/log/php
+            - ./logs/db:/var/log/mysql
+            - ./logs/memcached:/var/log/memcached
+            - db:/var/lib/mysql
+            - cache:/var/lib/memcached
+            - ./www/html:/var/www/html
+            - ${SITE_PATH}:/var/www/bitrix
+            - /etc/localtime:/etc/localtime/:ro
+        networks:
+            - bitrix
+
+    push-server-sub:
+        image: ikarpovich/bitrix-push-server
+        links:
+            - redis
+        networks:
+            - bitrix
+            - default
+        environment:
+            - REDIS_HOST=redis
+            - LISTEN_HOSTNAME=0.0.0.0
+            - LISTEN_PORT=80
+            - SECURITY_KEY=${SECURITY_KEY}
+            - MODE=sub
+        labels:
+            - "traefik.enable=true"
+            - "traefik.http.routers.nginx-dev2.rule=Host(`bitrix24-sub.docker.localhost`)"
+            - "traefik.http.services.nginx-dev2.loadbalancer.server.port=80"
+            #- "traefik.http.routers.nginx-dev2.tls=true"
+            - "traefik.docker.network=traefik-net"
+
+    push-server-pub:
+        image: ikarpovich/bitrix-push-server
+        links:
+            - redis
+        networks:
+            - bitrix
+        environment:
+            - REDIS_HOST=redis
+            - LISTEN_HOSTNAME=0.0.0.0
+            - LISTEN_PORT=80
+            - SECURITY_KEY=${SECURITY_KEY}
+            - MODE=pub
+
+    redis:
+        image: redis
+        volumes:
+            - redis_data:/data
+        networks:
+            - bitrix
+
+    mailhog:
+        image: mailhog/mailhog
+        container_name: mailhog
+        ports:
+            - "8025:8025"
+            - "1025:1025"
+        networks:
+            - bitrix
+
+    cronjobber:
+        image: docker:edge
+        volumes:
+            - /var/run/docker.sock:/var/run/docker.sock
+        container_name: cronjobber
+        command: >
+            sh -c "
+            echo '* * * * * docker exec bx-php php -f /var/www/bitrix/bitrix/modules/main/tools/cron_events.php' > /etc/crontabs/root
+            && crond -f"
+        networks:
+            - bitrix
+
+volumes:
+    db:
+        driver: local
+    cache:
+        driver: local
+    redis_data:
+        driver: local
+
+networks:
+    default:
+        external:
+            name: traefik-net
+    bitrix:
+        driver: bridge
+        ipam:
+            driver: default
+            config:
+                - subnet: 10.100.0.0/24
