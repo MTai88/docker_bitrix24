@@ -44,7 +44,7 @@ docker-compose down
 
 ## Notes
 - Default path with your local files ```/var/www/bitrix/```
-- You should write database container name as "db" in database server address, "localhost" wont be working. Example database & memcached site [config](configs/.settings.php).
+- You should write database container name as "db" in database server address, "localhost" won't be working. Example database & memcached site [config](configs/.settings.php).
 - To upload the database backup use the command: ```cat /var/www/bitrix/backup.sql | docker exec -i mysql /usr/bin/mysql -u root -p123 bitrix```
 - Enter `SECURITY_KEY` from `env` file to the `Signature code for server interaction` field in a push&pull module options
 - Enter `http://push-server-pub/bitrix/pub/` to the `Message sender path` field in a push&pull module options
