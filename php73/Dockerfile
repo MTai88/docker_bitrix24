@@ -15,6 +15,7 @@ RUN apt-get update \
     php7.3-ldap \
     php7.3-opcache \
     php7.3-zip \
+    ca-certificates golang-go git \
     php-pear php-dev libmcrypt-dev gcc make autoconf libc-dev pkg-config \
     && pecl install mcrypt-1.0.3 \
     && apt-get clean; rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/* /usr/share/doc/*
@@ -25,12 +26,7 @@ COPY ./php.ini /etc/php/7.3/fpm/conf.d/90-php.ini
 COPY ./php.ini /etc/php/7.3/cli/conf.d/90-php.ini
 
 #install mail
-RUN apt-get update &&\
-    apt-get install --no-install-recommends --assume-yes --quiet ca-certificates curl git &&\
-    rm -rf /var/lib/apt/lists/*
-RUN curl -Lsf 'https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz' | tar -C '/usr/local' -xvzf -
-ENV PATH /usr/local/go/bin:$PATH
-RUN go get github.com/mailhog/mhsendmail
+RUN go install github.com/mailhog/mhsendmail@latest
 RUN cp /root/go/bin/mhsendmail /usr/bin/mhsendmail
 
 RUN usermod -u 1000 www-data
