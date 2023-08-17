@@ -10,6 +10,7 @@ RUN apt-get update \
     php8.2-interbase \
     php8.2-redis \
     php8.2-soap \
+    php8.2-xdebug \
     php8.2-gd \
     php8.2-imagick \
     php8.2-opcache \
