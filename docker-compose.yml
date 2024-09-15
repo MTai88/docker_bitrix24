@@ -1,17 +1,20 @@
-version: '2'
 
 services:
     php:
-        build: ./${PHP_VERSION}
+        build: ./php/${PHP_VERSION}
         container_name: bx-php
         volumes_from:
             - source
         links:
             - db
             - memcached
+        environment:
+            TZ: Europe/Moscow
+        stdin_open: true
+        tty: true
         networks:
             - bitrix
-        restart: always
+        restart: unless-stopped
     web_server:
         build: ./${WEB_SERVER_TYPE}
         depends_on:
@@ -23,13 +26,17 @@ services:
         networks:
             - bitrix
             - default
+        environment:
+            TZ: Europe/Moscow
+        stdin_open: true
+        tty: true
         labels:
             - "traefik.enable=true"
             - "traefik.http.routers.nginx-dev1.rule=Host(`${HOST}`)"
             - "traefik.http.services.nginx-dev1.loadbalancer.server.port=80"
             #- "traefik.http.routers.nginx-dev1.tls=true"
             - "traefik.docker.network=traefik-net"
-        restart: always
+        restart: unless-stopped
     db:
         build: ./${DB_SERVER_TYPE}
         platform: linux/amd64
@@ -42,19 +49,26 @@ services:
             MYSQL_USER: ${MYSQL_USER}
             MYSQL_PASSWORD: ${MYSQL_PASSWORD}
             MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+            TZ: Europe/Moscow
         command: mysqld --sql-mode=""
         networks:
             - bitrix
-        restart: always
+        stdin_open: true
+        tty: true
+        restart: unless-stopped
     memcached:
-        image: memcached:1.6.12-alpine
+        image: memcached:latest
         volumes_from:
             - source
         ports:
             - '${INTERFACE}:11211:11211'
         networks:
             - bitrix
-        restart: always
+        environment:
+            TZ: Europe/Moscow
+        stdin_open: true
+        tty: true
+        restart: unless-stopped
     adminer:
         image: dockette/adminer:full
         links:
@@ -63,6 +77,10 @@ services:
             - '${INTERFACE}:8080:80'
         environment:
             UPLOAD: 1024M # upload_max_filesize, post_max_size
+            TZ: Europe/Moscow
+        restart: unless-stopped
+        stdin_open: true
+        tty: true
         networks:
             - bitrix
     source:
@@ -151,8 +169,8 @@ volumes:
 
 networks:
     default:
-        external:
-            name: traefik-net
+        name: traefik-net
+        external: true
     bitrix:
         driver: bridge
         ipam:
