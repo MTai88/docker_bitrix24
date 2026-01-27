@@ -34,7 +34,7 @@ services:
             - "traefik.enable=true"
             - "traefik.http.routers.nginx-dev1.rule=Host(`${HOST}`)"
             - "traefik.http.services.nginx-dev1.loadbalancer.server.port=80"
-            #- "traefik.http.routers.nginx-dev1.tls=true"
+            - "traefik.http.routers.nginx-dev1.tls=true"
             - "traefik.docker.network=traefik-net"
         restart: unless-stopped
     db:
@@ -115,7 +115,7 @@ services:
             - "traefik.enable=true"
             - "traefik.http.routers.nginx-dev2.rule=Host(`bitrix24-sub.docker.localhost`)"
             - "traefik.http.services.nginx-dev2.loadbalancer.server.port=80"
-            #- "traefik.http.routers.nginx-dev2.tls=true"
+            - "traefik.http.routers.nginx-dev2.tls=true"
             - "traefik.docker.network=traefik-net"
 
     push-server-pub:
