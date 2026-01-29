@@ -34,12 +34,12 @@ rows in `docker-compose.yml` file
 ## Starting and stopping containers
 ### Start
 ```
-docker-compose up -d
+docker compose up -d
 ```
 
 ### Stop
 ```
-docker-compose down
+docker compose down
 ```
 
 ## Notes
